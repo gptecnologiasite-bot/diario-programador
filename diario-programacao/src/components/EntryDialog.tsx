@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { ENTRY_MOODS, moodLabels } from '@/lib/format'
 import type { DiaryEntry, EntryFormData, EntryMood } from '@/types/entry'
 
 interface EntryDialogProps {
@@ -36,9 +37,13 @@ const defaultForm: EntryFormData = {
   hoursSpent: 1,
 }
 
+const MIN_TITLE = 3
+const MIN_CONTENT = 10
+
 export function EntryDialog({ open, onOpenChange, entry, onSubmit }: EntryDialogProps) {
   const [form, setForm] = useState<EntryFormData>(defaultForm)
   const [tagsInput, setTagsInput] = useState('')
+  const [touched, setTouched] = useState({ title: false, content: false })
 
   useEffect(() => {
     if (open) {
@@ -56,17 +61,34 @@ export function EntryDialog({ open, onOpenChange, entry, onSubmit }: EntryDialog
         setForm({ ...defaultForm, date: new Date().toISOString().slice(0, 10) })
         setTagsInput('')
       }
+      setTouched({ title: false, content: false })
     }
   }, [open, entry])
 
+  const titleError =
+    touched.title && form.title.trim().length < MIN_TITLE
+      ? `Mínimo ${MIN_TITLE} caracteres`
+      : null
+
+  const contentError =
+    touched.content && form.content.trim().length < MIN_CONTENT
+      ? `Mínimo ${MIN_CONTENT} caracteres`
+      : null
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    if (!form.title.trim() || !form.content.trim()) return
+    setTouched({ title: true, content: true })
+    if (form.title.trim().length < MIN_TITLE || form.content.trim().length < MIN_CONTENT) return
 
-    const tags = tagsInput
-      .split(',')
-      .map((tag) => tag.trim().toLowerCase())
-      .filter(Boolean)
+    // Remove tags duplicadas e normaliza
+    const tags = Array.from(
+      new Set(
+        tagsInput
+          .split(',')
+          .map((tag) => tag.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    )
 
     onSubmit({ ...form, tags })
     onOpenChange(false)
@@ -75,7 +97,7 @@ export function EntryDialog({ open, onOpenChange, entry, onSubmit }: EntryDialog
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <DialogHeader>
             <DialogTitle>{entry ? 'Editar entrada' : 'Nova entrada'}</DialogTitle>
             <DialogDescription>
@@ -84,29 +106,51 @@ export function EntryDialog({ open, onOpenChange, entry, onSubmit }: EntryDialog
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
+            {/* Título */}
             <div className="grid gap-2">
               <Label htmlFor="title">Título</Label>
               <Input
                 id="title"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
+                onBlur={() => setTouched((t) => ({ ...t, title: true }))}
                 placeholder="Ex: Aprendi hooks no React"
-                required
+                aria-invalid={!!titleError}
+                aria-describedby={titleError ? 'title-error' : undefined}
               />
+              {titleError && (
+                <p id="title-error" className="text-xs text-destructive">
+                  {titleError}
+                </p>
+              )}
             </div>
 
+            {/* Conteúdo */}
             <div className="grid gap-2">
-              <Label htmlFor="content">Conteúdo</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="content">Conteúdo</Label>
+                <span className="text-xs text-muted-foreground">
+                  {form.content.length} caracteres
+                </span>
+              </div>
               <Textarea
                 id="content"
                 value={form.content}
                 onChange={(e) => setForm({ ...form, content: e.target.value })}
+                onBlur={() => setTouched((t) => ({ ...t, content: true }))}
                 placeholder="O que você estudou, praticou ou construiu hoje?"
                 rows={6}
-                required
+                aria-invalid={!!contentError}
+                aria-describedby={contentError ? 'content-error' : undefined}
               />
+              {contentError && (
+                <p id="content-error" className="text-xs text-destructive">
+                  {contentError}
+                </p>
+              )}
             </div>
 
+            {/* Data + Horas */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="date">Data</Label>
@@ -136,25 +180,27 @@ export function EntryDialog({ open, onOpenChange, entry, onSubmit }: EntryDialog
               </div>
             </div>
 
+            {/* Dificuldade */}
             <div className="grid gap-2">
               <Label>Dificuldade</Label>
               <Select
                 value={form.mood}
-                onValueChange={(value) =>
-                  setForm({ ...form, mood: value as EntryMood })
-                }
+                onValueChange={(value) => setForm({ ...form, mood: value as EntryMood })}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="facil">Fácil</SelectItem>
-                  <SelectItem value="medio">Médio</SelectItem>
-                  <SelectItem value="dificil">Difícil</SelectItem>
+                  {ENTRY_MOODS.map((mood) => (
+                    <SelectItem key={mood} value={mood}>
+                      {moodLabels[mood]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
+            {/* Tags */}
             <div className="grid gap-2">
               <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
               <Input
@@ -163,6 +209,9 @@ export function EntryDialog({ open, onOpenChange, entry, onSubmit }: EntryDialog
                 onChange={(e) => setTagsInput(e.target.value)}
                 placeholder="react, typescript, algoritmos"
               />
+              <p className="text-xs text-muted-foreground">
+                Duplicatas são removidas automaticamente.
+              </p>
             </div>
           </div>
 

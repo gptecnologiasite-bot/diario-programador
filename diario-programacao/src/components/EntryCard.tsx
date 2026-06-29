@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { formatDate, moodColors, moodLabels } from '@/lib/format'
+import { formatDate, formatRelativeDate, moodColors, moodLabels } from '@/lib/format'
 import type { DiaryEntry } from '@/types/entry'
 
 interface EntryCardProps {
@@ -19,6 +19,12 @@ interface EntryCardProps {
 }
 
 export function EntryCard({ entry, onEdit, onDelete }: EntryCardProps) {
+  const handleDelete = () => {
+    if (window.confirm(`Excluir "${entry.title}"? Esta ação não pode ser desfeita.`)) {
+      onDelete(entry.id)
+    }
+  }
+
   return (
     <Card className="text-left transition-shadow hover:shadow-md">
       <CardHeader className="gap-2">
@@ -26,7 +32,16 @@ export function EntryCard({ entry, onEdit, onDelete }: EntryCardProps) {
           <CardTitle className="text-base leading-snug">{entry.title}</CardTitle>
           <Badge className={moodColors[entry.mood]}>{moodLabels[entry.mood]}</Badge>
         </div>
-        <CardDescription>{formatDate(entry.date)}</CardDescription>
+        <CardDescription>
+          <span title={formatDate(entry.date)}>{formatDate(entry.date)}</span>
+          {' · '}
+          <span
+            title={`Criado ${formatRelativeDate(entry.createdAt)}`}
+            className="text-muted-foreground/70"
+          >
+            {formatRelativeDate(entry.createdAt)}
+          </span>
+        </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-3">
@@ -52,14 +67,20 @@ export function EntryCard({ entry, onEdit, onDelete }: EntryCardProps) {
         </span>
 
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={() => onEdit(entry)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => onEdit(entry)}
+            aria-label={`Editar entrada: ${entry.title}`}
+          >
             <Pencil />
           </Button>
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={() => onDelete(entry.id)}
+            onClick={handleDelete}
             className="text-destructive hover:text-destructive"
+            aria-label={`Excluir entrada: ${entry.title}`}
           >
             <Trash2 />
           </Button>
@@ -68,3 +89,4 @@ export function EntryCard({ entry, onEdit, onDelete }: EntryCardProps) {
     </Card>
   )
 }
+

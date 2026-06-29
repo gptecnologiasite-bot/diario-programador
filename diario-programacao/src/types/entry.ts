@@ -1,4 +1,8 @@
-export type EntryMood = 'facil' | 'medio' | 'dificil'
+export const ENTRY_MOODS = ['facil', 'medio', 'dificil'] as const
+export type EntryMood = (typeof ENTRY_MOODS)[number]
+
+export const SORT_OPTIONS = ['newest', 'oldest', 'hours-desc', 'hours-asc'] as const
+export type SortOption = (typeof SORT_OPTIONS)[number]
 
 export interface DiaryEntry {
   id: string
@@ -13,3 +17,4 @@ export interface DiaryEntry {
 }
 
 export type EntryFormData = Omit<DiaryEntry, 'id' | 'createdAt' | 'updatedAt'>
+

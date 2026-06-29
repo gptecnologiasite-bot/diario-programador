@@ -1,13 +1,15 @@
-import { BookOpen, Moon, Sun } from 'lucide-react'
+import { BookOpen, Download, Moon, Sun, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/hooks/useTheme'
 
 interface HeaderProps {
   entryCount: number
   onNewEntry: () => void
+  onExport: () => void
+  onImport: () => void
 }
 
-export function Header({ entryCount, onNewEntry }: HeaderProps) {
+export function Header({ entryCount, onNewEntry, onExport, onImport }: HeaderProps) {
   const { theme, toggleTheme } = useTheme()
 
   return (
@@ -30,6 +32,28 @@ export function Header({ entryCount, onNewEntry }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          {entryCount > 0 && (
+            <>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onExport}
+                aria-label="Exportar entradas como JSON"
+                title="Exportar backup"
+              >
+                <Download className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onImport}
+                aria-label="Importar entradas de arquivo JSON"
+                title="Importar backup"
+              >
+                <Upload className="size-4" />
+              </Button>
+            </>
+          )}
           <Button
             variant="outline"
             size="icon"
