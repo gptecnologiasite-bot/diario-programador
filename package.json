@@ -1,0 +1,10 @@
+{
+  "name": "texte",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix diario-programacao",
+    "build": "npm run build --prefix diario-programacao",
+    "preview": "npm run preview --prefix diario-programacao",
+    "install:app": "npm install --prefix diario-programacao"
+  }
+}
